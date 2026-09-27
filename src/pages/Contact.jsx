@@ -1,15 +1,50 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function Contact() {
   useEffect(() => {
     document.title = 'Contact Us | A.K. Metal Works';
   }, []);
+  const [formData, setFormData] = useState({name: "", contact_info: "", requirement_detail: ""});
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleChange = (e)=>{
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+  });
   };
 
-  return (
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitted(true);
+    setStatusMessage("");
+    try{
+      const response = await fetch("http://localhost:3000/submit/form",{
+      method: "POST",
+      headers:{
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    });
+    const data = await response.json();
+    if(response.ok){
+      setStatusMessage("form data submitted successfully");
+    }
+    else{
+      setStatusMessage(`Some error occured: ${data.message}`);
+    }
+  }
+  catch(err){
+    console.log(err);
+    setStatusMessage("some error occured while submitting the form");
+  }
+  finally{
+    setFormData({name: "", contact_info: "", requirement_detail: ""}); // reseting the form
+    setIsSubmitted(false);
+  }
+};
+return (
     <main
       className="
         main-container
@@ -240,6 +275,9 @@ export default function Contact() {
 
                 <input
                   type="text"
+                  name="name"
+                  onChange={handleChange}
+                  value={formData.name}
                   placeholder="Naam likhiye"
                   className="
                     w-full
@@ -272,6 +310,9 @@ export default function Contact() {
 
                 <input
                   type="text"
+                  name="contact_info"
+                  onChange={handleChange}
+                  value = {formData.contact_info}
                   placeholder="Contact info likhiye"
                   className="
                     w-full
@@ -304,6 +345,9 @@ export default function Contact() {
 
                 <textarea
                   placeholder="Metal work ya order requirement ke bare mein bataye..."
+                  name="requirement_detail"
+                  onChange={handleChange}
+                  value={formData.requirement_detail}
                   className="
                     w-full
                     border
@@ -324,6 +368,8 @@ export default function Contact() {
 
               <button
                 type="submit"
+                disabled={isSubmitted}
+                style={{padding: "10px 16px", cursor: "pointer"}}
                 className="
                   submit-btn
                   w-full
@@ -340,9 +386,14 @@ export default function Contact() {
                   duration-300
                 "
               >
-                Inquiry Submit Karein
+                {
+                  isSubmitted ? "Saving..." : "Submit"
+                }
               </button>
             </form>
+            {statusMessage && (
+              <p style={{marginTop: "16px", fontWeight: "bold"}}>{statusMessage}</p>
+            )}
           </div>
         </div>
       </section>
